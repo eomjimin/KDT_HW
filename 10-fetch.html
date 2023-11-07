@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>fetch</title>
+    <style>
+        body {
+            text-align: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        table {
+            margin: auto;
+            width: 60%;
+        }
+
+        td {
+            text-align: center;
+            padding: 10px;
+            border: 1px solid black;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>fetch</h2>
+    <table id="table">
+        <tr style="background-color: rgb(196, 196, 196); font-weight: bold; font-size: 20px;">
+            <td>timepoint</td>
+            <td>cloudcover</td>
+            <td>seeing</td>
+            <td>transparency</td>
+            <td>lifted_index</td>
+        </tr>
+    </table>
+    <script>
+        fetch("https://www.7timer.info/bin/astro.php?lon=113.2&lat=23.1&ac=0&unit=metric&output=json&tzshift=0")
+            .then((response) => {
+                return response.json();
+            })
+            .then((data) => {
+                var table = document.getElementById('table');
+                for (let i = 0; i < 24; i++){
+                    let row = `<tr>
+                                            <td>${data.dataseries[i].timepoint}</td>
+                                            <td>${data.dataseries[i].cloudcover}</td>
+                                            <td>${data.dataseries[i].seeing}</td>
+                                            <td>${data.dataseries[i].transparency}</td>
+                                            <td>${data.dataseries[i].lifted_index}</td>
+                                        </tr>`;
+                    table.innerHTML += row;            
+                }
+            })
+    </script>
+</body>
+</html>
