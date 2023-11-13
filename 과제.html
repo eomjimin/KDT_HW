@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=5b1cb65093110b4f75c35e5df408644f"></script>
+    <style>
+        body {
+            font-size: 10px;
+        }
+        #map {
+            margin: auto;
+            position: relative;
+            z-index: 0;
+        }
+        #home {
+            position: absolute;
+            left: 75%;
+            top: 20%;
+            /* transform: translate(-50%, -50%); */
+            z-index: 1;
+        }
+        span {
+            font-weight: bold;
+        }
+
+        h2 {
+            font-size: 12px;
+            margin: 15px 10px 0 10px;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map" style="width: 900px; height: 600px;"></div>
+    <div id="home"><button type="button" onclick="goBack()">Home</button></div>
+
+    <script type="text/javascript">
+        const url = ["https://apis.data.go.kr/B552555/lhLeaseInfo1/lhLeaseInfo1?serviceKey=ld8VFJQgXNdUAYQoekPo3F5Uy1Tmwaku30BRXiF5Nv81gGpVVlqJ3g7yvXZ3Bjav3VUtZvLnZ8/lSIUVGwQRfg%3D%3D&PG_SZ=100&PAGE=1&CNP_CD=11&SPL_TP_CD=08", "https://apis.data.go.kr/B552555/lhLeaseInfo1/lhLeaseInfo1?serviceKey=ld8VFJQgXNdUAYQoekPo3F5Uy1Tmwaku30BRXiF5Nv81gGpVVlqJ3g7yvXZ3Bjav3VUtZvLnZ8%2FlSIUVGwQRfg%3D%3D&PG_SZ=100&PAGE=1&CNP_CD=11&SPL_TP_CD=10"]
+        // const kookmin =[[37.47140, 127.0887], [37.51551, 127.0640], [37.55951, 126.8481], [37.46588, 126.9278], [37.46413, 126.9266], [37.46056, 126.9183], [37.50151, 127.1056]]
+        const kookmin = {
+            '서울강남 A5BL(10년,분납)': [37.47140, 127.0887],
+            '서울강남권도시형주택(삼성)': [37.51551, 127.0640],
+            '서울등촌6': [37.55951, 126.8481],
+            '서울신림1': [37.46588, 126.9278],
+            '서울신림2': [37.46413, 126.9266],
+            '서울신림3(공공50년)': [37.46056, 126.9183],
+            '서울서초 4블록': [37.45837, 127.0237],
+            '서울강남권도시형주택(석촌)': [37.50151, 127.1056]
+
+        }
+        var container = document.getElementById('map'); //지도를 담을 영역의 DOM 레퍼런스
+        var options = { //지도를 생성할 때 필요한 기본 옵션
+            center: new kakao.maps.LatLng(37.55340, 126.9917), //지도의 중심좌표.
+            level: 9 //지도의 레벨(확대, 축소 정도)
+        };
+        var map = new kakao.maps.Map(container, options); //지도 생성 및 객체 리턴
+
+        function goBack(){
+            map.panTo(options.center, {animate:{duration: 300}});
+                    setTimeout(() => {
+                        map.setLevel(9, {animate: {duration: 500}})
+                        console.log('실행')
+                    }, 300)
+        }
+        fetch(url[0])
+            .then((response) => {
+                return response.json();
+            })
+            .then((data) => {
+                // var zoomControl = new kakao.maps.ZoomControl();
+                // map.addControl(zoomControl, kakao.maps.ControlPosition.RIGHT);
+                // 마커를 생성합니다'
+                let mvalue = [];
+                let before = Object.keys(kookmin)[0];
+                let value = '';
+                data = data[1].dsList;
+
+                for (let i = 0; i < data.length; i++) {
+                    if (before == data[i].SBD_LGO_NM) {
+                        value += `<li style = "margin-right: 10px;">
+                                        <p><span>면적:</span><br>${data[i].DDO_AR}</p>
+                                        <p><span>임대보증금:</span><br>${data[i].LS_GMY}</p>
+                                        <p><span>월임대료:</span><br>${data[i].RFE}</p>
+                                    </li>`;
+                    }
+                    else {
+                        value = '<h2>' + before + '</h2>' + '<ul style = "display: flex; list-style: none; padding: 0 10px;">' + value + '</ul>'
+                        mvalue.push(value);
+                        before = data[i].SBD_LGO_NM;
+                        value = `<li style = "margin-right: 10px;">
+                                        <p><span>면적:</span><br>${data[i].DDO_AR}</p>
+                                        <p><span>임대보증금:</span><br>${data[i].LS_GMY}</p>
+                                        <p><span>월임대료:</span><br>${data[i].RFE}</p>
+                                    </li>`;
+                    }
+                }
+                value = '<h2>' + before + '</h2>' + '<ul style = "display: flex; list-style: none; padding: 0 10px;">' + value + '</ul>'
+                mvalue.push(value);
+                mvalue.push(value);
+
+                let i = 0;
+                for (let loc in kookmin) {
+                    let marker = new kakao.maps.Marker({
+                        clickable: true,
+                        map: map,
+                        position: new kakao.maps.LatLng(kookmin[loc][0], kookmin[loc][1])
+                    });
+                    let info = new kakao.maps.InfoWindow({
+                        content: mvalue[i]
+                    })
+                    kakao.maps.event.addListener(marker, "mouseover", makeOverListener(map, marker, info));
+                    kakao.maps.event.addListener(marker, "mouseout", makeOutListener(info));
+                    i += 1;
+                    kakao.maps.event.addListener(marker, "click", function(){
+                        zoomin(kookmin[loc][0], kookmin[loc][1])
+                    });
+                }
+
+                function makeOverListener(map, marker, infowindow) {
+                    return function () {
+                        infowindow.open(map, marker);
+                    };
+                }
+
+                // 인포윈도우를 닫는 클로저를 만드는 함수입니다 
+                function makeOutListener(infowindow) {
+                    return function () {
+                        infowindow.close();
+                    };
+                }
+
+                function zoomin(var1, var2) {
+                    let new_center = new kakao.maps.LatLng(var1, var2)                    
+                    map.panTo(new_center, {animate:{duration: 300}});
+                    setTimeout(() => {
+                        map.setLevel(4, {animate: {duration: 500}})
+                        console.log('실행')
+                    }, 300)
+                    
+                }
+
+            });
+
+
+    </script>
+
+
+
+</body>
+
+</html>
