@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banapresso</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f8f8;
+        }
+
+        #container {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        #banaStore {
+            display: flex;
+            flex-wrap: wrap;
+            overflow-y: scroll;
+            justify-content: space-around;
+            width: 48%;
+            height: 800px;
+            margin: 50px;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            flex: 0 0 calc(50% - 40px);
+            /* 각 li 요소에 50%의 너비를 할당 */
+            margin: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0.2, 0.2, 0.2, 0.2);
+            overflow: hidden;
+            transition: transform 0.3s ease-in-out;
+            display: flex;
+            flex-direction: row;
+        }
+
+        li:hover {
+            transform: scale(1.05);
+        }
+
+        #image {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px 0 0 8px;
+            object-fit: cover;
+        }
+
+        .text {
+            flex: 1;
+            padding: 20px;
+            margin: auto;
+            text-align: left;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Banapresso Store</h2>
+    <div id="container">
+        <ul id="banaStore"></ul>
+        <div id="map" style="width:800px;height:750px;margin: 80px;"></div>
+    </div>
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=5b1cb65093110b4f75c35e5df408644f&libraries=services"></script>
+    <script>
+        var mapContainer = document.getElementById('map'), // 지도를 표시할 div 
+            mapOption = {
+                center: new kakao.maps.LatLng(36.91671, 127.7226), // 지도의 중심좌표
+                level: 12 // 지도의 확대 레벨
+            };
+
+        // 지도를 생성합니다    
+        var map = new kakao.maps.Map(mapContainer, mapOption);
+
+        // 주소-좌표 변환 객체를 생성합니다
+
+        fetch("http://localhost:8080/banapresso")
+            .then(res => res.json())
+            .then(data => {
+                var ul = document.getElementById('banaStore');
+                for (let i = 0; i < data.length; i++) {
+                    let row = `<li>
+                                <img src="./${data[i].file}" alt="이미지 준비중" id='image'>
+                                <span class='text'>${data[i].store}<br>${data[i].address}</span>                       
+                            </li>`;
+                    ul.innerHTML += row;
+                }
+                let storeTag = document.getElementsByClassName('text')
+
+                console.log(storeTag[0].innerText.split('\n')[1])
+                // let lastInfo = new kakao.maps.InfoWindow({
+                //     content: ""
+                // });
+                let lastInfo = undefined;
+                data.forEach(element => {
+                    var geocoder = new kakao.maps.services.Geocoder();
+                    geocoder.addressSearch(element.address, function (result, status) {
+
+                        // 정상적으로 검색이 완료됐으면 
+                        if (status === kakao.maps.services.Status.OK) {
+
+                            var coords = new kakao.maps.LatLng(result[0].y, result[0].x);
+
+                            // 결과값으로 받은 위치를 마커로 표시합니다
+                            var marker = new kakao.maps.Marker({
+                                map: map,
+                                position: coords
+                            });
+                            // 인포윈도우로 장소에 대한 설명을 표시합니다
+                            var infowindow = new kakao.maps.InfoWindow({
+                                content: element.store
+                            });
+
+                            for (let i = 0; i < storeTag.length; i++) {
+                                if (storeTag[i].innerText.split('\n')[1] == element.address) {
+                                    // storeTag[i].addEventListener( "mouseover", makeOverListener(map, marker, infowindow));
+                                    // storeTag[i].addEventListener( "mouseout", makeOutListener(infowindow));
+
+                                    storeTag[i].addEventListener("click", function () {
+                                        zoomin(result[0].y, result[0].x, infowindow)
+                                    });
+                                }
+                            }
+                            let coords_last;
+                            
+                            function zoomin(var1, var2, infowindow) {
+                                if(lastInfo != undefined){
+                                    lastInfo.setMap(null)
+                                    console.log('실행')
+                                }
+                                let new_center = new kakao.maps.LatLng(var1, var2)
+                                map.panTo(new_center, { animate: { duration: 300 } });
+                                setTimeout(() => {
+                                    map.setLevel(4, { animate: { duration: 500 } })
+                                    infowindow.open(map, marker);
+                                }, 600)
+                                lastInfo = infowindow
+
+                            }
+                        }
+                    });
+                });
+            })
+    </script>
+</body>
+
+</html>
